@@ -8,9 +8,11 @@ import { UploadedFile } from "..";
 export default function UploadDocsStep({
   isDisabled,
   uploadedFiles,
+  submittedFormId
 }: {
   isDisabled: boolean;
   uploadedFiles?: UploadedFile[];
+  submittedFormId?:string
 }) {
   const { setValue, trigger, register } = useFormContext();
 
@@ -29,6 +31,7 @@ export default function UploadDocsStep({
         onChange={handleFilesChange}
         disabled={isDisabled}
         uploadedFilesData={uploadedFiles}
+        submittedFormIdLocal={submittedFormId}
       />
     </Box>
   );

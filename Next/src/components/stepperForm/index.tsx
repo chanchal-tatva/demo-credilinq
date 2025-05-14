@@ -1,4 +1,10 @@
-"use client";
+'use client';
+import {
+  finalSubmit,
+  getCompanyDetails,
+  saveApplication,
+  saveCompanyInfo,
+} from '@/services/company-info';
 import {
   applicantInfoSchema,
   ApplicationInfoData,
@@ -8,31 +14,17 @@ import {
   StepFormData,
   termsSchema,
   uploadDocsSchema,
-} from "@/validationSchema/multiStepSchema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Box,
-  Button,
-  Paper,
-  Step,
-  StepContent,
-  StepLabel,
-  Stepper,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-import { FormProvider, useForm, useWatch } from "react-hook-form";
-import ApplicantInfoStep from "./steps/ApplicantInfoStep";
-import CompanyInfoStep from "./steps/CompanyInfoStep";
-import TermsAndConditionsStep from "./steps/TermsAndConditionsStep";
-import UploadDocsStep from "./steps/UploadDocsStep";
-import {
-  finalSubmit,
-  getCompanyDetails,
-  saveApplication,
-  saveCompanyInfo,
-} from "@/services/company-info";
+} from '@/validationSchema/multiStepSchema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Box, Button, Paper, Step, StepContent, StepLabel, Stepper } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
+import ApplicantInfoStep from './steps/ApplicantInfoStep';
+import CompanyInfoStep from './steps/CompanyInfoStep';
+import TermsAndConditionsStep from './steps/TermsAndConditionsStep';
+import UploadDocsStep from './steps/UploadDocsStep';
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export interface UploadedFile {
   id: string;
@@ -48,46 +40,43 @@ export interface UploadedFile {
 interface StepComponentInterface {
   isDisabled: boolean;
   uploadedFiles?: UploadedFile[];
+  submittedFormId?: string;
 }
 
 const steps = [
   {
-    title: "Company Information",
+    title: 'Company Information',
     component: ({ isDisabled }: StepComponentInterface) => (
       <CompanyInfoStep isDisabled={isDisabled} />
     ),
     schema: companyInfoSchema,
-    fields: ["companyUEN", "companyName"],
+    fields: ['companyUEN', 'companyName'],
   },
   {
-    title: "Applicant Information",
-    component: ({ isDisabled }: StepComponentInterface) => (
-      <ApplicantInfoStep />
-    ),
+    title: 'Applicant Information',
+    component: ({ isDisabled }: StepComponentInterface) => <ApplicantInfoStep />,
     schema: applicantInfoSchema,
-    fields: [
-      "fullName",
-      "position",
-      "emailAddress",
-      "reEnterEmailAddress",
-      "mobileNumber",
-    ],
+    fields: ['fullName', 'position', 'emailAddress', 'reEnterEmailAddress', 'mobileNumber'],
   },
   {
-    title: "Upload Document",
-    component: ({ isDisabled, uploadedFiles }: StepComponentInterface) => (
-      <UploadDocsStep isDisabled={isDisabled} uploadedFiles={uploadedFiles} />
+    title: 'Upload Document',
+    component: ({ isDisabled, uploadedFiles, submittedFormId }: StepComponentInterface) => (
+      <UploadDocsStep
+        isDisabled={isDisabled}
+        uploadedFiles={uploadedFiles}
+        submittedFormId={submittedFormId}
+      />
     ),
     schema: uploadDocsSchema,
-    fields: ["pdfDoc"],
+    fields: ['pdfDoc'],
   },
   {
-    title: "Terms & Conditions",
+    title: 'Terms & Conditions',
     component: ({ isDisabled }: StepComponentInterface) => (
       <TermsAndConditionsStep isDisabled={isDisabled} />
     ),
     schema: termsSchema,
-    fields: ["agreeToTerms"],
+    fields: ['agreeToTerms'],
   },
 ];
 
@@ -97,8 +86,9 @@ interface SaveFormData {
 }
 
 export default function StepperForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const submittedFormId = searchParams.get("formId");
+  const [submittedFormIdLocal, setSubmittedFormIdLocal] = useState<string>('');
   const [activeStep, setActiveStep] = useState(0);
   const [validatedStep, setValidatedStep] = useState<Record<number, boolean>>({
     0: false,
@@ -109,29 +99,29 @@ export default function StepperForm() {
 
   const [uploadedFiles, setUploadedFiles] = useState([] as UploadedFile[]);
 
-  const router = useRouter();
+  const submittedFormId = searchParams.get('formId') || submittedFormIdLocal;
 
   const methods = useForm<StepFormData>({
     resolver: zodResolver(fullSchema),
-    mode: "all",
+    mode: 'all',
   });
 
   const { watch, setError, trigger, clearErrors } = methods;
 
   const { dirtyFields } = methods.formState;
 
-  const email = watch("emailAddress");
-  const reEmail = watch("reEnterEmailAddress");
+  const email = watch('emailAddress');
+  const reEmail = watch('reEnterEmailAddress');
 
   useEffect(() => {
     if (email !== reEmail) {
-      console.log("NOT_MATCHED");
-      setError("reEnterEmailAddress", {
-        message: "Email addresses do not match",
+      console.log('NOT_MATCHED');
+      setError('reEnterEmailAddress', {
+        message: 'Email addresses do not match',
       });
-      trigger("reEnterEmailAddress");
+      trigger('reEnterEmailAddress');
     } else {
-      clearErrors("reEnterEmailAddress");
+      clearErrors('reEnterEmailAddress');
     }
   }, [email, reEmail, dirtyFields]);
 
@@ -139,6 +129,7 @@ export default function StepperForm() {
     if (submittedFormId) {
       getCompanyDetails(submittedFormId)
         .then((result) => {
+          result?.id && setSubmittedFormIdLocal(result.id);
           methods.reset({
             companyName: result?.companyName,
             companyUEN: result?.companyUEN,
@@ -171,16 +162,11 @@ export default function StepperForm() {
       const result = await saveCompanyInfo({ companyName, companyUEN });
       const formId = result?.id;
       const newSearchParams = new URLSearchParams(window.location.search);
-      newSearchParams.set("formId", formId);
+      newSearchParams.set('formId', formId);
       router.push(`?${newSearchParams.toString()}`);
     } else if (activeStep === 1) {
-      const {
-        fullName,
-        position,
-        emailAddress,
-        reEnterEmailAddress,
-        mobileNumber,
-      } = formValues as ApplicationInfoData;
+      const { fullName, position, emailAddress, reEnterEmailAddress, mobileNumber } =
+        formValues as ApplicationInfoData;
 
       try {
         await saveApplication(submittedFormId as string, {
@@ -225,7 +211,7 @@ export default function StepperForm() {
       console.log({ result });
 
       // Show the listing only after successful submission
-      router.push("/list");
+      router.push('/list');
     } catch (error) {
       console.log({ error });
     }
@@ -239,17 +225,17 @@ export default function StepperForm() {
     <Paper
       elevation={3}
       sx={{
-        height: "100%",
-        maxWidth: "1150px",
-        margin: "auto",
-        padding: "48px 32px",
+        height: '100%',
+        maxWidth: '1150px',
+        margin: 'auto',
+        padding: '48px 32px',
       }}
     >
       <FormProvider {...methods}>
         <Box
           component="form"
           onSubmit={methods.handleSubmit(onSubmit, (errors) => {
-            console.error("❌ Form submission failed with errors:", errors);
+            console.error('❌ Form submission failed with errors:', errors);
           })}
         >
           <Stepper activeStep={activeStep} orientation="vertical">
@@ -260,9 +246,9 @@ export default function StepperForm() {
                     <Box
                       className="stepHeader"
                       sx={{
-                        backgroundColor: "rgb(96, 26, 121)",
-                        fontSize: "20px",
-                        marginBottom: "8px",
+                        backgroundColor: 'rgb(96, 26, 121)',
+                        fontSize: '20px',
+                        marginBottom: '8px',
                       }}
                     >
                       {step.title}
@@ -278,6 +264,7 @@ export default function StepperForm() {
                     {step.component({
                       isDisabled: getFormStatus({ activeStep }),
                       uploadedFiles,
+                      submittedFormId: submittedFormId,
                     })}
                   </StepContent>
                 </Step>
@@ -285,12 +272,8 @@ export default function StepperForm() {
             })}
           </Stepper>
 
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
-            <Button
-              disabled={!watchedValues.agreeToTerms}
-              type="submit"
-              variant="contained"
-            >
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button disabled={!watchedValues.agreeToTerms} type="submit" variant="contained">
               Submit
             </Button>
           </Box>
