@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.custom-gradient {
+  background: linear-gradient(
+    266.33deg,
+    rgb(213, 3, 125) 3.04%,
+    rgb(118, 3, 113) 16.97%,
+    rgb(25, 5, 83) 45.49%
+  );
+}
+.stepHeader {
+  padding: 8px 16px;
+  color: rgb(255, 255, 255);
+  border-radius: 5px;
+}
+.dropzone {
+  cursor: pointer;
+}
+.Mui-active {
+  color: red !important;
+}
+.Mui-completed {
+  color: green !important;
+}
